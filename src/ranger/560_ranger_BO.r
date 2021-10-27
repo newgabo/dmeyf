@@ -20,14 +20,14 @@ require("mlrMBO")
 
 
 #defino la carpeta donde trabajo
-setwd( "~/buckets/b1/crudoB/"  )
+setwd( "E:/Archivo/EconFin"  )
 
 
 kexperimento  <- NA   #NA si se corre la primera vez, un valor concreto si es para continuar procesando
 
 kscript           <- "560_ranger_BO"
-karch_generacion  <- "./datasetsOri/paquete_premium_202009.csv"
-karch_aplicacion  <- "./datasetsOri/paquete_premium_202011.csv"
+karch_generacion  <- "./datasets/paquete_premium_202009.csv"
+karch_aplicacion  <- "./datasets/paquete_premium_202011.csv"
 kBO_iter    <-  150   #cantidad de iteraciones de la Optimizacion Bayesiana
 
 hs  <- makeParamSet(
@@ -36,7 +36,7 @@ hs  <- makeParamSet(
           makeIntegerParam("min.node.size" ,    lower=  1L  , upper=  500L),
           makeIntegerParam("mtry" ,             lower=  2L  , upper=   50L))
 
-ksemilla_azar  <- 102191  #Aqui poner la propia semilla
+ksemilla_azar  <- 150209  #Aqui poner la propia semilla
 #------------------------------------------------------------------------------
 #Funcion que lleva el registro de los experimentos
 
@@ -109,11 +109,15 @@ ranger_Simple  <- function( fold_test, pdata, param )
 
   prediccion  <- predict( modelo, pdata[ fold==fold_test] )
 
-  ganancia_testing  <- pdata[ fold==fold_test,
-                              sum( (prediccion$predictions[ ,"POS" ] > 0.025) *
-                                    ifelse( clase_binaria=="POS", 48750, -1250)  ) ]
+  #ganancia_testing  <- pdata[ fold==fold_test,
+  #                            sum( (prediccion$predictions[ ,"POS" ] > 0.025) *
+  #                                  ifelse( clase_binaria=="POS", 48750, -1250)  ) ]
 
-  return( ganancia_testing )
+  ganancia_testing  <- pdata[ fold==fold_test,
+                              sum( (prediccion$predictions[ ,"POS" ] > 0.047) *
+                                     ifelse( clase_binaria=="POS", 48750, -1250)  ) ]
+  
+    return( ganancia_testing )
 }
 #------------------------------------------------------------------------------
 
@@ -165,7 +169,8 @@ EstimarGanancia_ranger  <- function( x )
 
      prediccion  <- predict( modelo, dapply )
 
-     Predicted  <- as.integer( prediccion$predictions[ ,"POS" ] > 0.025 )
+     #Predicted  <- as.integer( prediccion$predictions[ ,"POS" ] > 0.025 )
+     Predicted  <- as.integer( prediccion$predictions[ ,"POS" ] > 0.047 )
 
      entrega  <- as.data.table( list( "numero_de_cliente"=dapply$numero_de_cliente, 
                                       "Predicted"= Predicted)  )
@@ -210,7 +215,8 @@ if( file.exists(klog) )
 #cargo el datset donde voy a entrenar
 dataset  <- fread(karch_generacion, stringsAsFactors= TRUE)   #donde entreno
 
-dataset[ , clase_binaria := as.factor(ifelse( clase_ternaria=="BAJA+2", "POS", "NEG" )) ]
+#dataset[ , clase_binaria := as.factor(ifelse( clase_ternaria=="BAJA+2", "POS", "NEG" )) ]
+dataset[ , clase_binaria := as.factor(ifelse( clase_ternaria=="CONTINUA", "NEG", "POS" )) ]
 dataset[ , clase_ternaria := NULL ]  #elimino la clase_ternaria, ya no la necesito
 #imputo los nulos, ya que ranger no acepta nulos
 #Leo Breiman, ¿por que le temias a los nulos?

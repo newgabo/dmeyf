@@ -10,7 +10,7 @@ gc()
 require("data.table")
 require("lightgbm")
 
-setwd("~/buckets/b1/crudoB" )  #establezco la carpeta donde voy a trabajar
+setwd("E:/Archivo/EconFin" )  #establezco la carpeta donde voy a trabajar
 
 #cargo el dataset
 dataset  <- fread("./datasetsOri/paquete_premium_202009.csv")
@@ -33,7 +33,12 @@ modelo  <- lightgbm( data= dtrain,
                      params= list( objective= "binary",
                                    max_bin= 15,
                                    min_data_in_leaf= 4000,
-                                   learning_rate= 0.05 )  )
+                                   learning_rate= 0.051,
+                                   num_iterations = 100
+                                   #,feature_fraction = 0.9
+                                   )  )
+# ACA HAY QUE AGREGAR num_iterations = 100
+
 
 
 #cargo el dataset donde aplico el modelo
@@ -44,7 +49,7 @@ prediccion  <- predict( modelo,  data.matrix( dapply[  , campos_buenos, with=FAL
 
 #la probabilidad de corte ya no es 0.025,  sino que 0.031
 entrega  <- as.data.table( list( "numero_de_cliente"= dapply[  , numero_de_cliente],
-                                 "Predicted"= as.numeric(prediccion > 0.031) ) ) #genero la salida
+                                 "Predicted"= as.numeric(prediccion > 0.0309) ) ) #genero la salida
 
 #genero el archivo para Kaggle
 fwrite( entrega, 

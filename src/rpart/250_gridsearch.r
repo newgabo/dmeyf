@@ -1,3 +1,5 @@
+#install.packages("rlist")
+
 #Grid Search con Arboles de Decision
 
 #limpio la memoria
@@ -9,9 +11,9 @@ require("rlist")
 require("parallel")
 require("rpart")
 
-setwd( "M:\\" )
+setwd("E:/Archivo/EconFin")
 
-ksemillas  <- c(102191, 200177, 410551, 552581, 892237) #reemplazar por las propias semillas
+ksemillas  <- c(150209, 260207, 410231, 710813, 850121) #reemplazar por las propias semillas
 
 #------------------------------------------------------------------------------
 

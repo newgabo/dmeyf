@@ -25,7 +25,7 @@ switch ( Sys.info()[['sysname']],
          Linux   = { directory.root   <-  "~/buckets/b1/crudo/" }  #Entorno Google Cloud
        )
 #defino la carpeta donde trabajo
-setwd( directory.root )
+setwd( "E:/Archivo/EconFin" )
 
 
 kexperimento  <- NA   #NA si se corre la primera vez, un valor concreto si es para continuar procesando
@@ -43,7 +43,10 @@ hs  <- makeParamSet(
           forbidden = quote( minbucket > 0.5*minsplit ) )
 
 
-ksemilla_azar  <- 102191
+ksemilla_azar  <- 150209
+
+
+
 #------------------------------------------------------------------------------
 #Funcion que lleva el registro de los experimentos
 
@@ -101,17 +104,24 @@ particionar  <- function( data, division, agrupa="", campo="fold", start=1, seed
 
 ArbolSimple  <- function( fold_test, data, param )
 {
+  # Function weights
+  positiveWeight = (100000/2)
+  negativeWeight = 1250
+  modelWeights <- ifelse(data$clase_ternaria== 'BAJA+2', positiveWeight, negativeWeight)
+  
   #genero el modelo
   modelo  <- rpart("clase_ternaria ~ .", 
                    data= data[ fold != fold_test, ],
                    xval= 0,
-                   control= param )
+                   control= param,
+                   weights = modelWeights )
 
   #aplico el modelo a los datos de testing, fold==2
   prediccion  <- predict( modelo, data[ fold==fold_test, ], type = "prob")
 
   prob_baja2  <- prediccion[, "BAJA+2"]
 
+  #ganancia_testing  <- sum(  data[ fold==fold_test ][ prob_baja2 >0.025,  ifelse( clase_ternaria=="BAJA+2", 48750, -1250 ) ] )
   ganancia_testing  <- sum(  data[ fold==fold_test ][ prob_baja2 >0.025,  ifelse( clase_ternaria=="BAJA+2", 48750, -1250 ) ] )
 
   return( ganancia_testing )
@@ -149,16 +159,22 @@ EstimarGanancia  <- function( x )
    {
      GLOBAL_ganancia_max <<-  ganancia  #asigno la nueva maxima ganancia
     
+     # Function weights
+     positiveWeight = (100000/2)
+     negativeWeight = 1250
+     modelWeights <- ifelse(data$clase_ternaria== 'BAJA+2', positiveWeight, negativeWeight)
+     
      modelo  <- rpart("clase_ternaria ~ .",
                       data= dataset,
                       xval= 0,
-                      control= x )
+                      control= x,
+                      weights = modelWeights)
 
      #genero el vector con la prediccion, la probabilidad de ser positivo
      prediccion  <- predict( modelo, dapply)
 
      prob_baja2  <- prediccion[, "BAJA+2"]
-     Predicted   <- ifelse( prob_baja2 > 0.025, 1, 0 )
+     #Predicted   <- ifelse( prob_baja2 > 0.025, 1, 0 )
 
      entrega  <-  as.data.table( list( "numero_de_cliente"=dapply$numero_de_cliente, "Predicted"=Predicted)  )
 
@@ -203,6 +219,57 @@ if( file.exists(klog) )
 dataset  <- fread(karch_generacion)   #donde entreno
 dapply  <- fread(karch_aplicacion)    #donde aplico el modelo
 
+
+##############
+
+# Columnas a eliminar del dataset por Data Drifting de Densidad
+dataset[,c("internet","mcuenta_corriente", "mcaja_ahorro_adicional",
+                 "mcaja_ahorro_dolares", "mprestamos_prendarios",
+                "mprestamos_hipotecarios", "mplazo_fijo_dolares", "mplazo_fijo_pesos",
+                "minversion1_pesos", "minversion1_dolares", "mtarjeta_visa_descuentos",
+                "mtarjeta_master_descuentos", "tmobile_app", "cmobile_app_trx", 
+                "Master_madelantopesos", "Master_madelantodolares", "Visa_msaldodolares"
+  ):=NULL]
+
+dapply[,c("internet","mcuenta_corriente", "mcaja_ahorro_adicional",
+           "mcaja_ahorro_dolares", "mprestamos_prendarios",
+           "mprestamos_hipotecarios", "mplazo_fijo_dolares", "mplazo_fijo_pesos",
+           "minversion1_pesos", "minversion1_dolares", "mtarjeta_visa_descuentos",
+           "mtarjeta_master_descuentos", "tmobile_app", "cmobile_app_trx", 
+           "Master_madelantopesos", "Master_madelantodolares", "Visa_msaldodolares"
+  ):=NULL]
+
+#View(dataset[,c("mactivos_margen_rank")])
+
+# Columnas a rankear por Data Drifting de Delta 
+campos_rankear = c("mactivos_margen", "mpayroll", "matm_other", "Master_fultimo_cierre", 
+                   "Visa_mfinanciacion_limite", "Master_Finiciomora", "Visa_mconsumosdolares")
+
+for( campo in campos_rankear )
+{
+  campo_nuevo_name = paste(campo, "_rank", sep = "")
+  
+  campo_rank = frankv(dataset, campo,
+                                order = 1L,
+                                na.last = "keep",
+                                ties.method="min")
+  dataset = cbind(dataset, campo_nuevo_name = campo_rank)
+  setnames(dataset, "campo_nuevo_name", campo_nuevo_name)
+  dataset[,c(campo):=NULL]
+
+  campo_rank = frankv(dapply, campo,
+                      order = 1L,
+                      na.last = "keep",
+                      ties.method="min")
+  dapply = cbind(dapply, campo_nuevo_name = campo_rank)
+  setnames(dapply, "campo_nuevo_name", campo_nuevo_name)
+  dapply[,c(campo):=NULL]
+  
+  print(campo_nuevo_name)
+}
+
+#############
+
 #Aqui comienza la configuracion de la Bayesian Optimization
 
 configureMlr( show.learner.output = FALSE)
@@ -232,5 +299,3 @@ if(!file.exists(kbayesiana)) {
 
 
 quit( save="no" )
-
-
