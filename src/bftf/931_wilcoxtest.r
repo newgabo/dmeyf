@@ -36,19 +36,16 @@ resultados_kaggle2[   , ganancia_Private := ganancia_Private/1e6 ]
 #Sobre el mismo experimento
 #Deberia dar que es lo mismo !
 wilcox.test(  resultados_testing1[ oficial==1, ganancia ][  1:100],
-              resultados_testing1[ oficial==1, ganancia ][101:200],
-              paired= TRUE )
+              resultados_testing1[ oficial==1, ganancia ][101:200] )
 
 wilcox.test(  resultados_testing1[ oficial==1, ganancia ][ 1:10],
-              resultados_testing1[ oficial==1, ganancia ][11:20],
-              paired= TRUE )
+              resultados_testing1[ oficial==1, ganancia ][11:20] )
 
 
 #Sobre el experimento 1 y el experimento 2
 #Deberia dar que son distintos
 wilcox.test(  resultados_testing1[ oficial==1, ganancia ][  1:100],
-              resultados_testing2[ oficial==1, ganancia ][101:200],
-              paired= TRUE )
+              resultados_testing2[ oficial==1, ganancia ][101:200] )
 
 
 #Hay solo 10 datos, pero debería darse cuenta que son distintos
@@ -56,8 +53,7 @@ resultados_testing1[ oficial==1, ganancia ][ 1:10]
 resultados_testing2[ oficial==1, ganancia ][11:20]
 
 wilcox.test(  resultados_testing1[ oficial==1, ganancia ][ 1:10],
-              resultados_testing2[ oficial==1, ganancia ][11:20],
-              paired= TRUE )
+              resultados_testing2[ oficial==1, ganancia ][11:20] )
 
 
 #Hay muy pocos datos, solo 5, se va a confundir
@@ -65,18 +61,15 @@ resultados_testing1[ oficial==1, ganancia ][ 1:5]
 resultados_testing2[ oficial==1, ganancia ][11:15]
 
 wilcox.test(  resultados_testing1[ oficial==1, ganancia ][ 1:5],
-              resultados_testing2[ oficial==1, ganancia ][11:15],
-              paired= TRUE )
+              resultados_testing2[ oficial==1, ganancia ][11:15] )
 
 
 
 #ALTERNATIVA  Test de Student
 t.test( resultados_testing1[ oficial==1, ganancia ][ 1:5],
         resultados_testing2[ oficial==1, ganancia ][11:15],
-        paired = TRUE, 
         alternative = "less")   #el primero es menor al segundo
 
 t.test( resultados_testing1[ oficial==1, ganancia ][ 1:100],
         resultados_testing2[ oficial==1, ganancia ][101:200],
-        paired = TRUE, 
         alternative = "less")
