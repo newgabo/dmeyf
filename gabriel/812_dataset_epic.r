@@ -18,19 +18,20 @@ require("lightgbm")
 
 
 #defino la carpeta donde trabajo
-directory.root  <- "E:/Archivo/EconFin"    # "~/buckets/b1/"  #Google Cloud
+#directory.root  <- "E:/Archivo/EconFin"    # "~/buckets/b1/"  #Google Cloud
+directory.root  <- "~/buckets/b1/"  #Google Cloud
 setwd( directory.root )
 
 palancas  <- list()  #variable con las palancas para activar/desactivar
 
-palancas$version  <- "v003"   #Muy importante, ir cambiando la version
+palancas$version  <- "v001"   #Muy importante, ir cambiando la version
 
-palancas$variablesdrift  <- c("internet","tmobile_app","cmobile_app_trx","Master_madelantodolares")   #aqui van las columnas que se quieren eliminar
-#palancas$variablesdrift  <- c()   #aqui van las columnas que se quieren eliminar
+#palancas$variablesdrift  <- c("internet","tmobile_app","cmobile_app_trx","Master_madelantodolares")   #aqui van las columnas que se quieren eliminar
+palancas$variablesdrift  <- c()   #aqui van las columnas que se quieren eliminar
 
 palancas$corregir <-  TRUE    # TRUE o FALSE
 
-palancas$nuevasvars <-  TRUE  #si quiero hacer Feature Engineering manual
+palancas$nuevasvars <-  FALSE  #si quiero hacer Feature Engineering manual
 
 palancas$dummiesNA  <-  FALSE #Idea de Santiago Dellachiesa de UAustral
 
