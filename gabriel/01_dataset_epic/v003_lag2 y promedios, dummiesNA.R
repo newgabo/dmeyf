@@ -572,12 +572,12 @@ CanaritosImportancia  <- function( dataset )
 correr_todo  <- function( palancas )
 {
   #cargo el dataset ORIGINAL
-  dataset1  <- fread( "./datasetsOri/paquete_premium_202009.csv")
-  dataset2  <- fread( "./datasetsOri/paquete_premium_202011.csv")
-
-  dataset   <- rbind( dataset1, dataset2 )
-  rm( dataset1, dataset2 )
-  gc()
+  #dataset1  <- fread( "./datasetsOri/paquete_premium_202009.csv")
+  #dataset2  <- fread( "./datasetsOri/paquete_premium_202011.csv")
+  #dataset   <- rbind( dataset1, dataset2 )
+  #rm( dataset1, dataset2 )
+  #gc()
+  dataset <- fread( "./datasetsOri/paquete_premium.csv.gz")
 
   setorder(  dataset, numero_de_cliente, foto_mes )  #ordeno el dataset
 
