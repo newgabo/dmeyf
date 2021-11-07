@@ -37,7 +37,7 @@ palancas$dummiesNA  <-  FALSE #Idea de Santiago Dellachiesa de UAustral
 
 palancas$lag1   <- TRUE    #lag de orden 1
 palancas$delta1 <- TRUE    # campo -  lag de orden 1 
-palancas$lag2   <- TRUE
+palancas$lag2   <- FALSE
 palancas$delta2 <- TRUE
 palancas$lag3   <- FALSE
 palancas$delta3 <- TRUE
@@ -49,18 +49,18 @@ palancas$lag6   <- FALSE
 palancas$delta6 <- FALSE
 
 palancas$promedio3  <- TRUE  #promedio  de los ultimos 3 meses
-palancas$promedio6  <- FALSE
+palancas$promedio6  <- TRUE
 
 palancas$minimo3  <- FALSE  #minimo de los ultimos 3 meses
-palancas$minimo6  <- TRUE
+palancas$minimo6  <- FALSE
 
 palancas$maximo3  <- FALSE  #maximo de los ultimos 3 meses
-palancas$maximo6  <- TRUE
+palancas$maximo6  <- FALSE
 
 palancas$tendencia6  <- FALSE    #Great power comes with great responsability
 
 
-palancas$canaritosimportancia  <- FALSE  #si me quedo solo con lo mas importante de canaritosimportancia
+palancas$canaritosimportancia  <- TRUE  #si me quedo solo con lo mas importante de canaritosimportancia
 
 
 #escribo para saber cuales fueron los parametros
