@@ -349,7 +349,17 @@ EstimarGanancia_lightgbm  <- function( x )
   param_final  <- copy( param_completo )
   param_final["early_stopping_rounds"]  <- NULL
   param_final$num_iterations <- modelocv$best_iter  #asigno el mejor num_iterations
-  param_final$ratio_corte  <- pos_corte /  sum(getinfo(dtrain, "weight"))
+  
+  ratio_corte_aux  <- pos_corte /  sum(getinfo(dtrain, "weight"))
+  #param_final$ratio_corte  <- pos_corte /  sum(getinfo(dtrain, "weight"))
+  if (is.na(ratio_corte_aux))
+  {
+    param_final$ratio_corte = param_final$ratio_corte
+  }
+  else
+  {
+    param_final$ratio_corte = ratio_corte_aux
+  }
 
 
   #si tengo una ganancia superadora, genero el archivo para Kaggle
