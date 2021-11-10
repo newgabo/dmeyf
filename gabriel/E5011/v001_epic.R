@@ -44,21 +44,21 @@ setwd( directory.root )
 
 kexperimento  <- NA   #NA si se corre la primera vez, un valor concreto si es para continuar procesando
 
-kscript         <- "823_epic"
+kscript         <- "v001_epic"
 
-karch_dataset    <- "./datasets/dataset_epic_simple_v003.csv.gz"   #este dataset se genero en el script 812_dataset_epic.r
+karch_dataset    <- "./datasets/dataset_epic_simple_v001.csv.gz"   #este dataset se genero en los scripts dataset epics
 
-kapply_mes       <- c(202011)  #El mes donde debo aplicar el modelo
+kapply_mes       <- c(202101)  #El mes donde debo aplicar el modelo
 
-ktrain_subsampling  <- 1.0   #el undersampling que voy a hacer de los continua
+ktrain_subsampling  <- 0.1   #el undersampling que voy a hacer de los continua
 
-ktrain_mes_hasta    <- 202009  #Obviamente, solo puedo entrenar hasta 202011
-ktrain_mes_desde    <- 202009
+ktrain_mes_desde    <- 201801
+ktrain_mes_hasta    <- 202012  #Obviamente, solo puedo entrenar hasta 202011
 
 ktrain_meses_malos  <- c()  #meses que quiero excluir del entrenamiento
 
-kgen_mes_hasta    <- 202009  #Obviamente, solo puedo entrenar hasta 202011
-kgen_mes_desde    <- 202009
+kgen_mes_desde    <- 201801
+kgen_mes_hasta    <- 202012  #Obviamente, solo puedo entrenar hasta 202011
 
 
 kBO_iter    <-  150   #cantidad de iteraciones de la Optimizacion Bayesiana
@@ -487,13 +487,13 @@ if(!file.exists(kbayesiana)) {
 #system( "sleep 10  &&  sudo shutdown -h now", wait=FALSE)
 
 #suicidio,  elimina la maquina virtual directamente
-#system( "sleep 10  && 
-#        export NAME=$(curl -X GET http://metadata.google.internal/computeMetadata/v1/instance/name -H 'Metadata-Flavor: Google') &&
-#        export ZONE=$(curl -X GET http://metadata.google.internal/computeMetadata/v1/instance/zone -H 'Metadata-Flavor: Google') &&
-#        gcloud --quiet compute instances delete $NAME --zone=$ZONE",
-#        wait=FALSE )
+system( "sleep 10  && 
+        export NAME=$(curl -X GET http://metadata.google.internal/computeMetadata/v1/instance/name -H 'Metadata-Flavor: Google') &&
+        export ZONE=$(curl -X GET http://metadata.google.internal/computeMetadata/v1/instance/zone -H 'Metadata-Flavor: Google') &&
+        gcloud --quiet compute instances delete $NAME --zone=$ZONE",
+        wait=FALSE )
 
 
-#quit( save="no" )
+quit( save="no" )
 
 

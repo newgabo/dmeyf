@@ -1,4 +1,3 @@
-#source("~/buckets/b1/crudoB/R/812_dataset_epic.r")
 #Necesita para correr en Google Cloud
 #256 GB de memoria RAM
 #300 GB de espacio en el disco local
@@ -18,29 +17,27 @@ require("lightgbm")
 
 
 #defino la carpeta donde trabajo
-#directory.root  <- "E:/Archivo/EconFin"    # "~/buckets/b1/"  #Google Cloud
-directory.root  <- "~/buckets/b1/"  #Google Cloud
+directory.root  <-  "~/buckets/b1/"  #Google Cloud
 setwd( directory.root )
 
 palancas  <- list()  #variable con las palancas para activar/desactivar
 
-palancas$version  <- "v001"   #Muy importante, ir cambiando la version
+palancas$version  <- "v004"   #Muy importante, ir cambiando la version
 
-#palancas$variablesdrift  <- c("internet","tmobile_app","cmobile_app_trx","Master_madelantodolares")   #aqui van las columnas que se quieren eliminar
 palancas$variablesdrift  <- c()   #aqui van las columnas que se quieren eliminar
 
 palancas$corregir <-  TRUE    # TRUE o FALSE
 
 palancas$nuevasvars <-  FALSE  #si quiero hacer Feature Engineering manual
 
-palancas$dummiesNA  <-  FALSE #Idea de Santiago Dellachiesa de UAustral
+palancas$dummiesNA  <-  TRUE #La idea de Santiago Dellachiesa
 
-palancas$lag1   <- FALSE    #lag de orden 1
-palancas$delta1 <- FALSE    # campo -  lag de orden 1 
+palancas$lag1   <- TRUE    #lag de orden 1
+palancas$delta1 <- TRUE    # campo -  lag de orden 1 
 palancas$lag2   <- FALSE
-palancas$delta2 <- FALSE
+palancas$delta2 <- TRUE
 palancas$lag3   <- FALSE
-palancas$delta3 <- FALSE
+palancas$delta3 <- TRUE
 palancas$lag4   <- FALSE
 palancas$delta4 <- FALSE
 palancas$lag5   <- FALSE
@@ -48,8 +45,8 @@ palancas$delta5 <- FALSE
 palancas$lag6   <- FALSE
 palancas$delta6 <- FALSE
 
-palancas$promedio3  <- FALSE  #promedio  de los ultimos 3 meses
-palancas$promedio6  <- FALSE
+palancas$promedio3  <- TRUE  #promedio  de los ultimos 3 meses
+palancas$promedio6  <- TRUE
 
 palancas$minimo3  <- FALSE  #minimo de los ultimos 3 meses
 palancas$minimo6  <- FALSE
@@ -57,10 +54,13 @@ palancas$minimo6  <- FALSE
 palancas$maximo3  <- FALSE  #maximo de los ultimos 3 meses
 palancas$maximo6  <- FALSE
 
+palancas$ratiomax3   <- TRUE   #La idea de Daiana Sparta
+palancas$ratiomean6  <- TRUE   #Un derivado de la idea de Daiana Sparta
+
 palancas$tendencia6  <- FALSE    #Great power comes with great responsability
 
 
-palancas$canaritosimportancia  <- FALSE  #si me quedo solo con lo mas importante de canaritosimportancia
+palancas$canaritosimportancia  <- TRUE  #si me quedo solo con lo mas importante de canaritosimportancia
 
 
 #escribo para saber cuales fueron los parametros
@@ -248,8 +248,7 @@ AgregarVariables  <- function( dataset )
   dataset[ , mv_mconsumosdolares     := rowSums( cbind( Master_mconsumosdolares,  Visa_mconsumosdolares) , na.rm=TRUE ) ]
   dataset[ , mv_mlimitecompra        := rowSums( cbind( Master_mlimitecompra,  Visa_mlimitecompra) , na.rm=TRUE ) ]
   dataset[ , mv_madelantopesos       := rowSums( cbind( Master_madelantopesos,  Visa_madelantopesos) , na.rm=TRUE ) ]
-  #dataset[ , mv_madelantodolares     := rowSums( cbind( Master_madelantodolares,  Visa_madelantodolares) , na.rm=TRUE ) ]
-  dataset[ , mv_madelantodolares     := rowSums( cbind( Visa_madelantodolares) , na.rm=TRUE ) ]
+  dataset[ , mv_madelantodolares     := rowSums( cbind( Master_madelantodolares,  Visa_madelantodolares) , na.rm=TRUE ) ]
   dataset[ , mv_fultimo_cierre       := pmax( Master_fultimo_cierre, Visa_fultimo_cierre, na.rm = TRUE) ]
   dataset[ , mv_mpagado              := rowSums( cbind( Master_mpagado,  Visa_mpagado) , na.rm=TRUE ) ]
   dataset[ , mv_mpagospesos          := rowSums( cbind( Master_mpagospesos,  Visa_mpagospesos) , na.rm=TRUE ) ]
@@ -368,6 +367,32 @@ Maximos  <- function( dataset, cols, nhistoria )
   sufijo  <- paste0( "_max", nhistoria )
 
   dataset[ , paste0( cols, sufijo) := frollapply(x=.SD, FUN="max", n=nhistoria, na.rm=TRUE, align="right"), 
+             by= numero_de_cliente, 
+             .SDcols= cols]
+
+  ReportarCampos( dataset )
+}
+#------------------------------------------------------------------------------
+#calcula  el ratio entre el valor actual y el maximo de los ultimos nhistoria meses
+
+RatioMax  <- function( dataset, cols, nhistoria )
+{
+  sufijo  <- paste0( "_rmax", nhistoria )
+
+  dataset[ , paste0( cols, sufijo) := .SD/ frollapply(x=.SD, FUN="max", n=nhistoria, na.rm=TRUE, align="right"), 
+             by= numero_de_cliente, 
+             .SDcols= cols]
+
+  ReportarCampos( dataset )
+}
+#------------------------------------------------------------------------------
+#calcula  el ratio entre el valor actual y el promedio de los ultimos nhistoria meses
+
+RatioMean  <- function( dataset, cols, nhistoria )
+{
+  sufijo  <- paste0( "_rmean", nhistoria )
+
+  dataset[ , paste0( cols, sufijo) := .SD/frollapply(x=.SD, FUN="mean", n=nhistoria, na.rm=TRUE, align="right"), 
              by= numero_de_cliente, 
              .SDcols= cols]
 
@@ -572,12 +597,7 @@ CanaritosImportancia  <- function( dataset )
 correr_todo  <- function( palancas )
 {
   #cargo el dataset ORIGINAL
-  dataset1  <- fread( "./datasetsOri/paquete_premium_202009.csv")
-  dataset2  <- fread( "./datasetsOri/paquete_premium_202011.csv")
-
-  dataset   <- rbind( dataset1, dataset2 )
-  rm( dataset1, dataset2 )
-  gc()
+  dataset  <- fread( "./datasetsOri/paquete_premium.csv.gz")
 
   setorder(  dataset, numero_de_cliente, foto_mes )  #ordeno el dataset
 
@@ -609,6 +629,10 @@ correr_todo  <- function( palancas )
   if( palancas$maximo3 )  Maximos( dataset, cols_analiticas, 3 )
   if( palancas$maximo6 )  Maximos( dataset, cols_analiticas, 6 )
 
+  if(palancas$ratiomax3)  RatioMax(  dataset, cols_analiticas, 3) #La idea de Daiana Sparta
+  if(palancas$ratiomean6) RatioMean( dataset, cols_analiticas, 6) #Derivado de la idea de Daiana Sparta
+
+
   if( palancas$tendencia6 )  Tendencia( dataset, cols_analiticas)
 
 
@@ -622,7 +646,7 @@ correr_todo  <- function( palancas )
 
   #Grabo el dataset
   fwrite( dataset,
-          paste0( "./datasets/dataset_epic_simple_", palancas$version, ".csv.gz" ),
+          paste0( "./datasets/dataset_epic_", palancas$version, ".csv.gz" ),
           logical01 = TRUE,
           sep= "," )
 
@@ -631,6 +655,10 @@ correr_todo  <- function( palancas )
 
 #Aqui empieza el programa
 
+
 correr_todo( palancas )
 
+
 #quit( save="no" )
+
+
