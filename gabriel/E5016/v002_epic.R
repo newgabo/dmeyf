@@ -36,7 +36,7 @@ switch ( Sys.info()[['sysname']],
          Windows = { directory.root  <-  "E:/Archivo/EconFin" },   #Windows
          Darwin  = { directory.root  <-  "~/dm/" },  #Apple MAC
          Linux   = { directory.root  <-  "~/buckets/b1/" } #Google Cloud
-       )
+)
 #defino la carpeta donde trabajo
 setwd( directory.root )
 
@@ -65,15 +65,15 @@ kBO_iter    <-  150   #cantidad de iteraciones de la Optimizacion Bayesiana
 
 #Aqui se cargan los hiperparametros
 hs <- makeParamSet( 
-         makeNumericParam("feature_fraction", lower=    0.3  , upper=    1.0),
-         makeIntegerParam("min_data_in_leaf", lower=  50L   , upper= 5000L),
-         makeIntegerParam("num_leaves",       lower=    30L   , upper= 2000L),
-         makeNumericParam("min_gain_to_split", lower=    0.0  , upper=    1.0),
-         makeNumericParam("lambda_l1", lower=    0.0  , upper=    100.0),
-         makeNumericParam("lambda_l2", lower=    0.0  , upper=    200.0),
-         #makeNumericParam("bagging_fraction", lower=    0.001  , upper=    0.995),
-         #makeIntegerParam("max_bin",   lower=    8L   , upper= 63L),
-         makeNumericParam("learning_rate",    lower=    0.005 , upper=    0.1)
+  makeNumericParam("feature_fraction", lower=    0.3  , upper=    1.0),
+  makeIntegerParam("min_data_in_leaf", lower=  50L   , upper= 5000L),
+  makeIntegerParam("num_leaves",       lower=    30L   , upper= 2000L),
+  makeNumericParam("min_gain_to_split", lower=    0.0  , upper=    1.0),
+  makeNumericParam("lambda_l1", lower=    0.0  , upper=    100.0),
+  makeNumericParam("lambda_l2", lower=    0.0  , upper=    200.0),
+  #makeNumericParam("bagging_fraction", lower=    0.001  , upper=    0.995),
+  #makeIntegerParam("max_bin",   lower=    8L   , upper= 63L),
+  makeNumericParam("learning_rate",    lower=    0.005 , upper=    0.1)
 )
 
 campos_malos  <- c()   #aqui se deben cargar todos los campos culpables del Data Drifting
@@ -85,15 +85,15 @@ ksemilla_azar  <- 161207  #Aqui poner la propia semilla
 get_experimento  <- function()
 {
   if( !file.exists( "./maestro.yaml" ) )  cat( file="./maestro.yaml", "experimento: 1000" )
-
+  
   exp  <- read_yaml( "./maestro.yaml" )
   experimento_actual  <- exp$experimento
-
+  
   exp$experimento  <- as.integer(exp$experimento + 1)
   Sys.chmod( "./maestro.yaml", mode = "0644", use_umask = TRUE)
   write_yaml( exp, "./maestro.yaml" )
   Sys.chmod( "./maestro.yaml", mode = "0444", use_umask = TRUE) #dejo el archivo readonly
-
+  
   return( experimento_actual )
 }
 #------------------------------------------------------------------------------
@@ -104,20 +104,20 @@ loguear  <- function( reg, arch=NA, folder="./work/", ext=".txt", verbose=TRUE )
 {
   archivo  <- arch
   if( is.na(arch) )  archivo  <- paste0(  folder, substitute( reg), ext )
-
+  
   if( !file.exists( archivo ) )  #Escribo los titulos
   {
     linea  <- paste0( "fecha\t", 
                       paste( list.names(reg), collapse="\t" ), "\n" )
-
+    
     cat( linea, file=archivo )
   }
-
+  
   linea  <- paste0( format(Sys.time(), "%Y%m%d %H%M%S"),  "\t",     #la fecha y hora
                     gsub( ", ", "\t", toString( reg ) ),  "\n" )
-
+  
   cat( linea, file=archivo, append=TRUE )  #grabo al archivo
-
+  
   if( verbose )  cat( linea )   #imprimo por pantalla
 }
 #------------------------------------------------------------------------------
@@ -125,62 +125,62 @@ loguear  <- function( reg, arch=NA, folder="./work/", ext=".txt", verbose=TRUE )
 particionar  <- function( data,  division, agrupa="",  campo="fold", start=1, seed=NA )
 {
   if( !is.na(seed) )   set.seed( seed )
-
+  
   bloque  <- unlist( mapply(  function(x,y) { rep( y, x )} ,   division,  seq( from=start, length.out=length(division) )  ) )  
-
+  
   data[ ,  (campo) :=  sample( rep( bloque, ceiling(.N/length(bloque))) )[1:.N],
-            by= agrupa ]
+        by= agrupa ]
 }
 #------------------------------------------------------------------------------
 
 HemiModelos  <- function( hparam )
 {
-
+  
   #Construyo el modelo sobre el fold=1
   dgeneracion1  <- lgb.Dataset( data=    data.matrix(  dataset[ generacion_final==1 & fold==1, campos_buenos, with=FALSE]),
                                 label=   dataset[ generacion_final==1 & fold==1, clase01] )
-
+  
   modelo_final1  <- lightgbm( data= dgeneracion1,
                               param= hparam,
                               verbose= -100 )
-
+  
   rm( dgeneracion1 )  #borro y libero memoria
   gc()
-
+  
   #Aplico el modelo al fold=2
   prediccion  <- predict( modelo_final1, data.matrix( dataset[ generacion_final==1 & fold==2, campos_buenos, with=FALSE]) )
   dataset[ generacion_final==1 & fold==2, prob := prediccion ]
-
+  
   tb_modelitos[ dataset[ generacion_final==1 & fold==2], 
                 on=c("numero_de_cliente","foto_mes"),  
                 paste0( "E", kexperimento,"_", GLOBAL_iteracion ) := i.prob  ]
-
-
+  
+  
   #AHORA SOBRE LA OTRA MITAD -----------------
-
+  
   #Construyo el modelo sobre el fold=2
   dgeneracion2  <- lgb.Dataset( data=    data.matrix(  dataset[ generacion_final==1 & fold==2, campos_buenos, with=FALSE]),
                                 label=   dataset[ generacion_final==1 & fold==2, clase01]
-                              )
-
+  )
+  
   modelo_final2  <- lightgbm( data= dgeneracion2,
                               param= hparam,
                               verbose= -100
-                            )
- 
+  )
+  
   rm( dgeneracion2 )  #borro y libero memoria
   gc()
-
+  
   #Aplico el modelo al fold=1
   prediccion  <- predict( modelo_final2, data.matrix( dataset[ generacion_final==1 & fold==1, campos_buenos, with=FALSE]) )
   dataset[ generacion_final==1 & fold==1, prob := prediccion ]
-
+  
   tb_modelitos[ dataset[ generacion_final==1 & fold==1], 
                 on= c("numero_de_cliente","foto_mes"),  
                 paste0( "E", kexperimento,"_", GLOBAL_iteracion ) := i.prob  ]
-
+  
   dataset[  , prob := NULL ]
-
+  
 }
 #------------------------------------------------------------------------------
 
@@ -189,65 +189,65 @@ FullModelo  <- function( hparam )
   #entreno sin undersampling
   dgeneracion  <- lgb.Dataset( data=    data.matrix(  dataset[ generacion_final==1 , campos_buenos, with=FALSE]),
                                label=   dataset[ generacion_final==1, clase01]
-                             )
-
+  )
+  
   modelo_final  <- lightgbm( data= dgeneracion,
                              param= hparam,
                              verbose= -100
-                           )
-
+  )
+  
   rm( dgeneracion )  #borro y libero memoria
   gc()
-
+  
   #calculo la importancia de variables
   tb_importancia  <- lgb.importance( model= modelo_final )
   fwrite( tb_importancia, 
           file= paste0( kimp, "imp_", sprintf("%03d", GLOBAL_iteracion), ".txt"),
           sep="\t" )
-
+  
   #Aplico sobre todo el dataset
   prediccion  <- predict( modelo_final, data.matrix( dataset[  , campos_buenos, with=FALSE]) )
   dataset[ , prob := prediccion ]
   tb_modelitos[ dataset, 
                 on=c("numero_de_cliente","foto_mes"),  
                 paste0( "E", kexperimento,"_", GLOBAL_iteracion ) := i.prob  ]
-
- #Fin primera pasada modelitos
-
+  
+  #Fin primera pasada modelitos
+  
   prediccion  <- predict( modelo_final, data.matrix( dapply[  , campos_buenos, with=FALSE]) )
-
+  
   predsort  <- sort(prediccion, decreasing=TRUE)
   pos_corte  <- as.integer(hparam$ratio_corte*nrow(dapply))
   prob_corte <- predsort[ pos_corte ]
   Predicted  <- as.integer( prediccion > prob_corte )
-
+  
   entrega  <- as.data.table( list( "numero_de_cliente"= dapply$numero_de_cliente, 
                                    "Predicted"= Predicted)  )
-
+  
   #genero el archivo para Kaggle
   fwrite( entrega, 
           file= paste0(kkaggle, sprintf("%03d", GLOBAL_iteracion), ".csv" ),
           sep= "," )
-
+  
   base  <- round( pos_corte / 500 ) * 500   - 3000
   evaluados  <- c( seq(from=base, to=pmax(base+6000,15000), by=500 ) , pos_corte )  
   evaluados  <- sort( evaluados )
-
+  
   for(  pos  in  evaluados )
   {
     prob_corte  <-  predsort[ pos ]
     Predicted  <- as.integer( prediccion > prob_corte )
-
+    
     entrega  <- as.data.table( list( "numero_de_cliente"= dapply$numero_de_cliente, 
                                      "Predicted"= Predicted)  )
-
+    
     #genero el archivo para Kaggle
     fwrite( entrega, 
             file= paste0(kkagglemeseta, sprintf("%03d", GLOBAL_iteracion), 
                          "_",  sprintf( "%05d", pos) ,".csv" ),
             sep= "," )
   }
-
+  
   rm( entrega, Predicted )
 }
 #------------------------------------------------------------------------------
@@ -258,23 +258,23 @@ fganancia_lgbm_meseta  <- function(probs, datos)
 {
   vlabels  <- getinfo(datos, "label")
   vpesos   <- getinfo(datos, "weight")
-
+  
   #solo sumo 48750 si vpesos > 1, hackeo 
   tbl  <- as.data.table( list( "prob"= probs, 
                                "gan"=  ifelse( vlabels==1 & vpesos <= 1, 48750, -1250 ) *vpesos,
                                "peso"=  vpesos
-                               ) )
-
+  ) )
+  
   setorder( tbl, -prob )
   tbl[ , gan_acum :=  cumsum( gan ) ]
   tbl[ , posicion :=  cumsum( peso ) ]
   setorder( tbl, -gan_acum )   #voy por la meseta
-
+  
   gan  <- mean( tbl[ 1:10,  gan_acum] )  #meseta de tamaño 10
-
+  
   pos_meseta  <- tbl[ 1:10,  median(posicion)]
   VPOS_CORTE  <<- c( VPOS_CORTE, pos_meseta )
-
+  
   return( list( "name"= "ganancia", 
                 "value"=  gan,
                 "higher_better"= TRUE ) )
@@ -282,24 +282,24 @@ fganancia_lgbm_meseta  <- function(probs, datos)
 #------------------------------------------------------------------------------
 
 x  <- list( 
-            "feature_fraction"= 0.50,
-            "min_data_in_leaf"= 100,
-            "num_leaves"= 20,
-            "min_gain_to_split"= 0.0,
-            "lambda_l1"= 0.0,        
-            "lambda_l2"= 0.0,
-            #"bagging_fraction" = 0.8
-            #"max_bin"= 15
-            "learning_rate"= 0.013
-            )
+  "feature_fraction"= 0.50,
+  "min_data_in_leaf"= 100,
+  "num_leaves"= 20,
+  "min_gain_to_split"= 0.0,
+  "lambda_l1"= 0.0,        
+  "lambda_l2"= 0.0,
+  #"bagging_fraction" = 0.8
+  #"max_bin"= 15
+  "learning_rate"= 0.013
+)
 
 
 EstimarGanancia_lightgbm  <- function( x )
 {
   GLOBAL_iteracion  <<- GLOBAL_iteracion + 1
-
+  
   gc()
-
+  
   param_basicos  <- list( objective= "binary",
                           metric= "custom",
                           first_metric_only= TRUE,
@@ -317,13 +317,13 @@ EstimarGanancia_lightgbm  <- function( x )
                           #subsample=.632,
                           #bagging_freq = 10,
                           seed= ksemilla_azar #999983
-                        )
-
+  )
+  
   #el parametro discolo, que depende de otro
   param_variable  <- list(  early_stopping_rounds= as.integer(50 + 1/x$learning_rate) )
-
+  
   param_completo  <- c( param_basicos, param_variable, x )
-
+  
   VPOS_CORTE  <<- c()
   kfolds  <- 5
   set.seed( ksemilla_azar )
@@ -333,42 +333,52 @@ EstimarGanancia_lightgbm  <- function( x )
                        nfold= kfolds,    #folds del cross validation
                        param= param_completo,
                        verbose= -100
-                      )
-
-
+  )
+  
+  
   ganancia  <- unlist(modelocv$record_evals$valid$ganancia$eval)[ modelocv$best_iter ]
   pos_corte  <-  sum( VPOS_CORTE[  (kfolds*modelocv$best_iter+1):( kfolds*modelocv$best_iter + kfolds ) ] )
-
+  
   #unlist(modelo$record_evals$valid$ganancia$eval)[ modelo$best_iter ]
-
+  
   #calculo la ganancia sobre los datos de testing
   ganancia_normalizada  <- ganancia * kfolds 
-
+  
   attr(ganancia_normalizada,"extras" )  <- list("num_iterations"= modelocv$best_iter)  #esta es la forma de devolver un parametro extra
-
+  
   param_final  <- copy( param_completo )
   param_final["early_stopping_rounds"]  <- NULL
   param_final$num_iterations <- modelocv$best_iter  #asigno el mejor num_iterations
-  param_final$ratio_corte  <- pos_corte /  sum(getinfo(dtrain, "weight"))
 
-
+  ratio_corte_aux  <- pos_corte /  sum(getinfo(dtrain, "weight"))
+  #param_final$ratio_corte  <- pos_corte /  sum(getinfo(dtrain, "weight"))
+  if (is.na(ratio_corte_aux))
+  {
+    param_final$ratio_corte = param_final$ratio_corte
+  }
+  else
+  {
+    param_final$ratio_corte = ratio_corte_aux
+  }
+  
+  
   #si tengo una ganancia superadora, genero el archivo para Kaggle
   if( ganancia_normalizada > GLOBAL_ganancia_max)
   {
     GLOBAL_ganancia_max  <<- ganancia_normalizada  #asigno la nueva maxima ganancia a una variable GLOBAL, por eso el <<-
-
+    
     FullModelo( param_final )
     HemiModelos( param_final )
     fwrite( tb_modelitos, file= kmodelitos, sep= "," )
   }
-
-   #logueo 
-   xx  <- param_final
-   xx$iteracion_bayesiana  <- GLOBAL_iteracion
-   xx$ganancia  <- ganancia_normalizada  #le agrego la ganancia
-   loguear( xx,  arch= klog )
-
-   return( ganancia_normalizada )
+  
+  #logueo 
+  xx  <- param_final
+  xx$iteracion_bayesiana  <- GLOBAL_iteracion
+  xx$ganancia  <- ganancia_normalizada  #le agrego la ganancia
+  loguear( xx,  arch= klog )
+  
+  return( ganancia_normalizada )
 }
 #------------------------------------------------------------------------------
 #Aqui empieza el programa
@@ -403,7 +413,7 @@ if( file.exists(klog) )
 } else {
   GLOBAL_iteracion  <- 0
   GLOBAL_ganancia_max  <- -Inf
-
+  
   tb_modelitos  <- dataset[  ,  c("numero_de_cliente","foto_mes"), with=FALSE ]
   fwrite( tb_modelitos, file= kmodelitos, sep= "," )
 }
@@ -423,18 +433,18 @@ dataset[ , clase01:= ifelse( clase_ternaria=="CONTINUA", 0, 1 ) ]
 particionar( dataset, division= c(1,1), agrupa= c("foto_mes","clase_ternaria" ), seed= ksemilla_azar )
 
 dataset[    foto_mes>= kgen_mes_desde  &
-            foto_mes<= kgen_mes_hasta & 
-            !( foto_mes %in% ktrain_meses_malos ),
-          generacion_final:= 1L ]  #donde entreno
+              foto_mes<= kgen_mes_hasta & 
+              !( foto_mes %in% ktrain_meses_malos ),
+            generacion_final:= 1L ]  #donde entreno
 
 
 #Defino los datos donde entreno, con subsampling de los CONTINUA
 vector_azar  <- runif( nrow(dataset) )
 dataset[    foto_mes>= ktrain_mes_desde  &
-            foto_mes<= ktrain_mes_hasta & 
-            !( foto_mes %in% ktrain_meses_malos ) & 
-            ( clase01==1 | vector_azar < ktrain_subsampling ),  
-          entrenamiento:= 1L ]  #donde entreno
+              foto_mes<= ktrain_mes_hasta & 
+              !( foto_mes %in% ktrain_meses_malos ) & 
+              ( clase01==1 | vector_azar < ktrain_subsampling ),  
+            entrenamiento:= 1L ]  #donde entreno
 
 
 #los campos que se van a utilizar
@@ -448,7 +458,7 @@ dtrain  <- lgb.Dataset( data=    data.matrix(  dataset[ entrenamiento==1 , campo
                         weight=  dataset[ entrenamiento==1, ifelse(clase_ternaria=="CONTINUA", 1/ktrain_subsampling,
                                                                    ifelse( clase_ternaria=="BAJA+2", 1, 1.0000001))] ,
                         free_raw_data= TRUE
-                      )
+)
 
 
 #Aqui comienza la configuracion de la Bayesian Optimization
@@ -460,12 +470,12 @@ configureMlr( show.learner.output= FALSE)
 #configuro la busqueda bayesiana,  los hiperparametros que se van a optimizar
 #por favor, no desesperarse por lo complejo
 obj.fun  <- makeSingleObjectiveFunction(
-              fn=       funcion_optimizar, #la funcion que voy a maximizar
-              minimize= FALSE,   #estoy Maximizando la ganancia
-              noisy=    TRUE,
-              par.set=  hs,     #definido al comienzo del programa
-              has.simple.signature = FALSE   #paso los parametros en una lista
-             )
+  fn=       funcion_optimizar, #la funcion que voy a maximizar
+  minimize= FALSE,   #estoy Maximizando la ganancia
+  noisy=    TRUE,
+  par.set=  hs,     #definido al comienzo del programa
+  has.simple.signature = FALSE   #paso los parametros en una lista
+)
 
 ctrl  <- makeMBOControl( save.on.disk.at.time= 600,  save.file.path= kbayesiana)  #se graba cada 600 segundos
 ctrl  <- setMBOControlTermination(ctrl, iters= kBO_iter )   #cantidad de iteraciones
@@ -495,5 +505,6 @@ system( "sleep 10  &&
 
 
 quit( save="no" )
+
 
 
