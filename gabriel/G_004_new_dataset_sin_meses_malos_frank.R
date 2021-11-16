@@ -177,3 +177,5 @@ fwrite( dataset,
         sep= "," )
 
 
+
+dim(dataset)
