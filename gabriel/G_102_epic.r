@@ -47,7 +47,7 @@ ktrain_subsampling  <- 0.1   #el undersampling que voy a hacer de los continua
 
 ktrain_mes_hasta    <- 202010  #Obviamente, solo puedo entrenar hasta 202011
 ktrain_mes_desde    <- 201801
-#ktrain_meses_malos  <- c( 202006 )  #meses que quiero excluir del entrenamiento
+ktrain_meses_malos  <- c(  )  #meses que quiero excluir del entrenamiento
 
 
 kgen_mes_hasta    <- 202011   #La generacion final para Kaggle, sin undersampling
@@ -61,7 +61,7 @@ hs <- makeParamSet(
          makeNumericParam("learning_rate",    lower=    0.01 , upper=    0.1),
          makeNumericParam("feature_fraction", lower=    0.1  , upper=    1.0),
          makeIntegerParam("min_data_in_leaf", lower=  200L   , upper= 8000L),
-         makeIntegerParam("num_leaves",       lower=  50L   , upper= 2000L)
+         makeIntegerParam("num_leaves",       lower=  50L   , upper= 2000L),
          makeNumericParam("min_gain_to_split", lower=    0.0  , upper=    1.0),
          makeNumericParam("lambda_l1", lower=    0.0  , upper=    100.0),
          makeNumericParam("lambda_l2", lower=    0.0  , upper=    200.0)
@@ -273,7 +273,7 @@ fganancia_lgbm_meseta  <- function(probs, datos)
 
 x  <- list( "learning_rate"= 0.02, 
             "feature_fraction"= 0.50,
-            "num_leaves"= 600 
+            "num_leaves"= 600, 
             "min_data_in_leaf"= 100,
             "num_leaves"= 20,
             "min_gain_to_split"= 0.0,
@@ -312,10 +312,13 @@ EstimarGanancia_lightgbm  <- function( x )
   param_completo  <- c( param_basicos, param_variable, x )
 
   VPOS_CORTE  <<- c()
+  kfolds  <- 5 # Evaluar si es viable con los tiempos
   set.seed( ksemilla_azar )
   modelo  <- lgb.train( data= dtrain,
                         valids= list( valid= dvalid ),
                         eval= fganancia_lgbm_meseta,
+                        stratified= TRUE, #sobre el cross validation
+                        nfold= kfolds,    #folds del cross validation
                         param= param_completo,
                         verbose= -100 )
 
