@@ -10,7 +10,7 @@ setwd( directory.root )
 dataset <- fread("./datasetsOri/paquete_premium.csv.gz")
 #dataset <- fread("./datasetsOri/paquete_premium_202009.csv")
 
-meses_buenos <- c(202010, 202005, 202008, 202009, 202007, 202004, 201909, 201808, 202006, 202003, 202001, 201803, 201807, 201902, 201911, 201806, 201804)
+meses_buenos <- c(202010, 202005, 202008, 202009, 202007, 202004, 201909, 201808, 202006, 202003, 202001, 201803, 201807, 201902, 201911, 201806, 201804, 202011, 202012, 202101)
 
 dataset = dataset[foto_mes %in% meses_buenos]
 
@@ -74,7 +74,7 @@ columnas_rankeables <- c(
     "ccuenta_debitos_automaticos",
     "mcuenta_debitos_automaticos",
     "ctarjeta_visa_debitos_automaticos",
-    "mtarjeta_visa_debitos_automaticos", #
+    #"mtarjeta_visa_debitos_automaticos", #
     "ctarjeta_master_debitos_automaticos",
     "mttarjeta_master_debitos_automaticos",
     "cpagodeservicios",
