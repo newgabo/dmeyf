@@ -20,12 +20,13 @@ require("lightgbm")
 directory.root  <-  "~/buckets/b1/"  #Google Cloud
 setwd( directory.root )
 
+palancas  <- list()  #variable con las palancas para activar/desactivar
+
 palancas$version  <- "G2_101"   #Muy importante, ir cambiando la version
 
 dataset_source <- "./datasetsOri/paquete_premium_rank.csv.gz"
 dataset_output <- paste0( "./datasets/dataset_epic_", palancas$version, ".csv.gz" )
 
-palancas  <- list()  #variable con las palancas para activar/desactivar
 
 
 palancas$variablesdrift  <- c()   #aqui van las columnas que se quieren eliminar
@@ -650,7 +651,7 @@ correr_todo  <- function( palancas )
   
   #Grabo el dataset
   fwrite( dataset,
-          paste0( dataset_output ),
+          dataset_output,
           logical01 = TRUE,
           sep= "," )
   
@@ -661,8 +662,5 @@ correr_todo  <- function( palancas )
 
 
 correr_todo( palancas )
-
-
-quit( save="no" )
 
 

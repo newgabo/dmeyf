@@ -44,9 +44,9 @@ setwd( directory.root )
 
 kexperimento  <- NA   #NA si se corre la primera vez, un valor concreto si es para continuar procesando
 
-kscript         <- "G_102_epic"
+kscript         <- "G2_102_epic"
 
-karch_dataset    <- "./datasets/dataset_epic_G001.csv.gz"
+karch_dataset    <- "./datasets/dataset_epic_G2_101.csv.gz"
 
 kapply_mes       <- c(202101)  #El mes donde debo aplicar el modelo
 
@@ -75,6 +75,9 @@ hs <- makeParamSet(
   #makeNumericParam("bagging_fraction", lower=    0.001  , upper=    0.995),
   #makeIntegerParam("max_bin",   lower=    8L   , upper= 63L)
 )
+
+#meses_buenos <- c(202101, 202011, 202010, 202009, 202008, 202007, 202006, 202005, 202004, 202003, 202001, 201911, 201909, 201902, 201808, 201807, 201806, 201804, 201803)
+meses_buenos <- c(202101, 202011,  202010, 202009, 202008, 202007)
 
 campos_malos  <- c()   #aqui se deben cargar todos los campos culpables del Data Drifting
 
@@ -310,7 +313,7 @@ EstimarGanancia_lightgbm  <- function( x )
                           #min_gain_to_split= 0.0, #por ahora, lo dejo fijo
                           #lambda_l1= 0.0,         #por ahora, lo dejo fijo
                           #lambda_l2= 0.0,         #por ahora, lo dejo fijo
-                          max_bin= 5,            #por ahora, lo dejo fijo
+                          max_bin= 31,            #por ahora, lo dejo fijo
                           num_iterations= 9999,   #un numero muy grande, lo limita early_stopping_rounds
                           force_row_wise= TRUE    #para que los alumnos no se atemoricen con tantos warning
   )
@@ -387,6 +390,10 @@ kmodelitos    <- paste0("./modelitos/E", kexperimento, "_modelitos.csv.gz" )
 
 #cargo el dataset que tiene los 36 meses
 dataset  <- fread(karch_dataset)
+
+# me quedo con los meses buenos seleccionados
+dataset = dataset[foto_mes %in% meses_buenos]
+
 
 #si ya existe el archivo log, traigo hasta donde llegue
 if( file.exists(klog) )
@@ -478,18 +485,5 @@ if(!file.exists(kbayesiana)) {
 }
 
 
-
-#apagado de la maquina virtual, pero NO se borra
-system( "sleep 10  &&  sudo shutdown -h now", wait=FALSE)
-
-#suicidio,  elimina la maquina virtual directamente
-#system( "sleep 10  && 
-#        export NAME=$(curl -X GET http://metadata.google.internal/computeMetadata/v1/instance/name -H 'Metadata-Flavor: Google') &&
-#        export ZONE=$(curl -X GET http://metadata.google.internal/computeMetadata/v1/instance/zone -H 'Metadata-Flavor: Google') &&
-#        gcloud --quiet compute instances delete $NAME --zone=$ZONE",
-#        wait=FALSE )
-
-
-quit( save="no" )
 
 
