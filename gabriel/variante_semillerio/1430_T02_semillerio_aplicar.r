@@ -29,11 +29,11 @@ x$num_iterations  <- 1006
 particionar  <- function( data,  division, agrupa="",  campo="fold", start=1, seed=NA )
 {
   if( !is.na(seed) )   set.seed( seed )
-
+  
   bloque  <- unlist( mapply(  function(x,y) { rep( y, x )} ,   division,  seq( from=start, length.out=length(division) )  ) )  
-
+  
   data[ ,  (campo) :=  sample( rep( bloque, ceiling(.N/length(bloque))) )[1:.N],
-            by= agrupa ]
+        by= agrupa ]
 }
 #------------------------------------------------------------------------------
 
@@ -100,7 +100,7 @@ param_buenos  <- list( objective= "binary",
                        feature_fraction= x$feature_fraction,
                        min_data_in_leaf=  x$min_data_in_leaf,
                        num_leaves= x$num_leaves
-                     )
+)
 
 
 #inicializo donde voy a guardar los resultados
@@ -112,53 +112,48 @@ isemilla  <- 0
 for( semilla in  ksemillas)
 {
   gc()
-
+  
   isemilla  <- isemilla + 1
   cat( isemilla, " " )  #imprimo para saber por que semilla va, ya que es leeentooooo
-
+  
   param_buenos$seed  <- semilla   #aqui utilizo la semilla
   #genero el modelo
   set.seed( semilla )
   modelo  <- lgb.train( data= dtrain,
                         param= param_buenos )
-
+  
   #aplico el modelo a los datos nuevos
   prediccion  <- frank(  predict( modelo, 
                                   data.matrix( dfuturo[ , campos_buenos, with=FALSE ]) ) )
-
+  
   tb_predicciones[  , predicciones_acumuladas :=  predicciones_acumuladas +  prediccion ]  #acumulo las predicciones
   tb_predicciones[  , paste0( "pred_", isemilla ) :=  prediccion ]  #guardo el resultado de esta prediccion
-
-
-  if(  isemilla %% 4 == 0 )  #imprimo cada 4 semillas
+  
+  
+  #Genero la entrega para Kaggle
+  entrega  <- as.data.table( list( "numero_de_cliente"= dfuturo[  , numero_de_cliente],
+                                   "prob"= tb_predicciones$predicciones_acumuladas )) #genero la salida
+  entrega [, "semillas" := isemilla]
+  
+  setorder( entrega, -prob )
+  
+  #genero el archivo para stackear
+  fwrite( entrega[ , c("numero_de_cliente","prob", "semillas"), with=FALSE], 
+          file=  paste0( "./modelitos/modelitos_semillerio_" , ksalida, ".csv" ),  
+          sep= "," ,
+          append = FALSE)
+  
+  if(  isemilla %% 5 == 0 )  #imprimo cada 5 semillas
   {
-    #Genero la entrega para Kaggle
-    entrega  <- as.data.table( list( "numero_de_cliente"= dfuturo[  , numero_de_cliente],
-                                     "prob"= tb_predicciones$predicciones_acumuladas ),
-                                     "semillas" = isemilla) #genero la salida
-
-    setorder( entrega, -prob )
-    
-    #genero el archivo para stackear
-    fwrite( entrega[ , c("numero_de_cliente","prob", "semillas"), with=FALSE], 
-            file=  paste0( "./modelitos/modelitos_semillerio_" , ksalida, ".csv" ),  
-            sep= "," ,
-            append = FALSE)
-    
     for(  corte  in seq( 10000, 15000, 1000) ) #imprimo cortes en 10000, 11000, 12000, 13000, 14000 y 15000
     {
       entrega[ ,  Predicted := 0L ]
       entrega[ 1:corte,  Predicted := 1L ]  #me quedo con los primeros
-
+      
       #genero el archivo para Kaggle
       fwrite( entrega[ , c("numero_de_cliente","Predicted"), with=FALSE], 
               file=  paste0( "./kaggle/" , ksalida, "_", isemilla,"_",corte, ".csv" ),  
               sep= "," )
     }
-    
-    
   }
-
-
 }
-
