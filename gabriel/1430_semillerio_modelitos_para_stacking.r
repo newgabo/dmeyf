@@ -129,27 +129,18 @@ for( semilla in  ksemillas)
   tb_predicciones[  , paste0( "pred_", isemilla ) :=  prediccion ]  #guardo el resultado de esta prediccion
 
 
-  if(  isemilla %% 5 == 0 )  #imprimo cada 5 semillas
+  if(  isemilla %% 2 == 0 )  #imprimo cada 2 semillas
   {
     #Genero la entrega para Kaggle
     entrega  <- as.data.table( list( "numero_de_cliente"= dfuturo[  , numero_de_cliente],
                                      "prob"= tb_predicciones$predicciones_acumuladas ) ) #genero la salida
+    entrega[,foto_mes] = 202101
+    
 
-    setorder( entrega, -prob )
-
-
-    for(  corte  in seq( 10000, 15000, 1000) ) #imprimo cortes en 10000, 11000, 12000, 13000, 14000 y 15000
-    {
-      entrega[ ,  Predicted := 0L ]
-      entrega[ 1:corte,  Predicted := 1L ]  #me quedo con los primeros
-
-      #genero el archivo para Kaggle
-      fwrite( entrega[ , c("numero_de_cliente","Predicted"), with=FALSE], 
-              file=  paste0( "./kaggle/" , ksalida, "_", isemilla,"_",corte, ".csv" ),  
-              sep= "," )
-    }
+    #genero el archivo para modelitos
+    fwrite( entrega[ , c("numero_de_cliente","prob"), with=FALSE], 
+            file=  paste0( "./modelitos/" , ksalida, "_", isemilla,"_", ".csv" ),  
+            sep= "," )
   }
-
-
 }
 
