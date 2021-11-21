@@ -75,7 +75,7 @@ hs <- makeParamSet(
         )
 
 
-ksemilla_azar  <- 102191  #Aqui poner la propia semilla
+ksemilla_azar  <- 161207  #Aqui poner la propia semilla
 
 #------------------------------------------------------------------------------
 #Funcion que lleva el registro de los experimentos
