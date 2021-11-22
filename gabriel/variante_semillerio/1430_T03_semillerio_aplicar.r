@@ -17,7 +17,7 @@ karch_dataset  <- "./datasets/semillerio_dataset_lag1.csv.gz"
 ksalida  <- "T03" 
 
 kexperimento  <- NA
-kscript         <- "s1431"
+kscript         <- "S1430_T03"
 
 
 kcantidad_semillas  <- 200
@@ -25,13 +25,12 @@ kcantidad_semillas  <- 200
 #ATENCION
 #aqui deben ir los mejores valores que salieron de la optimizacion bayesiana
 x  <- list()
-x$gleaf_size   <-  
-x$gnum_leaves  <-  
-x$learning_rate <-  
-x$feature_fraction <-  
-x$max_bin  <-  
-x$num_iterations  <-   
-x$pos_ratio  <- 
+x$gleaf_size   <-  59.14565661
+x$gnum_leaves  <-  0.230084696
+x$learning_rate <-  0.02795111
+x$feature_fraction <-  0.817848504
+x$max_bin  <-  31
+x$num_iterations  <-   696
 
 
 #------------------------------------------------------------------------------
