@@ -1,5 +1,8 @@
+#Incorpora el  max_bin  a la Bayesian Optimization
+#Atencion,  si se quiere un max_bin mayor a 255, se debe DUPLICAR la cantidad de memoria RAM
+
 #Este script necesita
-# 32 GB de memoria RAM
+# 64 GB de memoria RAM
 # 256 GB de espacio en disco
 # 8 vCPU
 # demora 22 horas en correr
@@ -51,27 +54,28 @@ setwd( directory.root )
 
 kexperimento  <- NA #NA si se corre la primera vez, un valor concreto si es para continuar procesando
 
-kscript       <- "1420_T02_lgbm"
+kscript       <- "1420_T04_lgbm"
 
-karchivo_dataset   <-  "./datasets/semillerio_dataset_lag1.csv.gz"
+karchivo_dataset   <-  "./datasetsOri/paquete_premium_rank.csv.gz"
 
-meses_training <- c(201909, 201808, 202001, 201803, 201807, 201902, 201911, 201806, 201804)
+meses_training <- c(202005, 202008, 202009, 202007, 202004, 202003, 202001)
 meses_validation <- c(202010, 202011)
 
 
 kBO_iter    <-  120   #cantidad de iteraciones de la Optimizacion Bayesiana
 
-kcantidad_semillas  <- 8
+kcantidad_semillas  <- 6
 
 
 #Aqui se cargan los hiperparametros
 #ATENCION  se juega con  gleaf_size y gnum_leaves
 hs <- makeParamSet( 
-  makeNumericParam("learning_rate",    lower=   0.02   , upper=    0.2),
-  makeNumericParam("feature_fraction", lower=   0.1    , upper=    1.0),
-  makeNumericParam("gleaf_size",       lower=  20.0    , upper=  100.0),
-  makeNumericParam("gnum_leaves",      lower=   0.01   , upper=    1.0)
-)
+         makeIntegerParam("max_bin",          lower=   4      , upper=  255),
+         makeNumericParam("learning_rate",    lower=   0.02   , upper=    0.2),
+         makeNumericParam("feature_fraction", lower=   0.1    , upper=    1.0),
+         makeNumericParam("gleaf_size",       lower=  20.0    , upper=  100.0),
+         makeNumericParam("gnum_leaves",      lower=   0.01   , upper=    1.0)
+        )
 
 
 ksemilla_azar  <- 161207  #Aqui poner la propia semilla
@@ -177,6 +181,22 @@ EstimarGanancia_lightgbm  <- function( x )
   gc()
   GLOBAL_iteracion  <<- GLOBAL_iteracion + 1
   
+  #validacion es una mitad de 202011
+  dvalid  <- lgb.Dataset( data=    data.matrix(  dapply[ fold==1, campos_buenos, with=FALSE]),
+                        label=   dapply[ fold==1, clase01],
+                        weight=  dapply[ fold==1, ifelse(clase_ternaria=="BAJA+2", 1.0000001, 1.0)] ,
+                        free_raw_data= FALSE
+)
+
+
+#genero el dataset de training con el formato que necesita LightGBM
+dtrain  <- lgb.Dataset( data=    data.matrix(  dataset[ train==1 , campos_buenos, with=FALSE]),
+                        label=   dataset[ train==1, clase01],
+                        weight=  dataset[ train==1, ifelse(clase_ternaria=="BAJA+2", 1.0000001, 1.0)] ,
+                        free_raw_data= FALSE
+)
+
+
   param_basicos  <- list( objective= "binary",
                           metric= "custom",
                           first_metric_only= TRUE,
@@ -187,7 +207,6 @@ EstimarGanancia_lightgbm  <- function( x )
                           min_gain_to_split= 0.0, #por ahora, lo dejo fijo
                           lambda_l1= 0.0,         #por ahora, lo dejo fijo
                           lambda_l2= 0.0,         #por ahora, lo dejo fijo
-                          max_bin= 31,            #MAX BIN extremo, para  German y Daiana
                           num_iterations= 9999,   #un numero muy grande, lo limita early_stopping_rounds
                           early_stopping_rounds= 200,
                           force_row_wise= TRUE    #para que los alumnos no se atemoricen con tantos warning
@@ -359,7 +378,7 @@ dapply  <- copy( dataset[  foto_mes %in% meses_validation] )
 dim(dapply)
 particionar( dapply,  c(1,1), agrupa="clase_ternaria", seed=17 )
 
-particionar( dataset,  c(1,9), agrupa=c("foto_mes","clase_ternaria"), campo="subsampling", seed=17 )
+particionar( dataset,  c(1,15), agrupa=c("foto_mes","clase_ternaria"), campo="subsampling", seed=17 )# Aca se define el undersampling
 dataset <- dataset[foto_mes %in% meses_training]
 
 
@@ -369,29 +388,12 @@ gc()
 
 campos_buenos  <- setdiff( colnames(dataset), c("clase_ternaria","clase01", "fold", "train", "subsampling" ) )
 
-#validacion es una mitad de 202011
-dvalid  <- lgb.Dataset( data=    data.matrix(  dapply[ fold==1, campos_buenos, with=FALSE]),
-                        label=   dapply[ fold==1, clase01],
-                        weight=  dapply[ fold==1, ifelse(clase_ternaria=="BAJA+2", 1.0000001, 1.0)] ,
-                        free_raw_data= FALSE
-)
 
 #undersampling para training
 dataset[  , train := 0L ]
 dataset[  foto_mes %in% meses_training &
             (clase01==1  | subsampling==1),
           train := 1L ]
-
-#genero el dataset de training con el formato que necesita LightGBM
-dtrain  <- lgb.Dataset( data=    data.matrix(  dataset[ train==1 , campos_buenos, with=FALSE]),
-                        label=   dataset[ train==1, clase01],
-                        weight=  dataset[ train==1, ifelse(clase_ternaria=="BAJA+2", 1.0000001, 1.0)] ,
-                        free_raw_data= FALSE
-)
-
-rm( dataset )
-gc()
-
 
 
 #Aqui comienza la configuracion de la Bayesian Optimization
