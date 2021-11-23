@@ -14,7 +14,7 @@ require("lightgbm")
 setwd("~/buckets/b1/")
 
 karch_dataset  <- "./datasetsOri/paquete_premium_rank.csv.gz"
-ksalida  <- "T03" 
+ksalida  <- "T07" 
 
 kexperimento  <- NA
 kscript         <- "S1430_T07"

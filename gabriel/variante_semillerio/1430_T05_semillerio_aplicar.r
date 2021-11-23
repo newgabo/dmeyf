@@ -14,7 +14,7 @@ require("lightgbm")
 setwd("~/buckets/b1/")
 
 karch_dataset  <- "./datasets/semillerio_dataset_lag1.csv.gz"
-ksalida  <- "T03" 
+ksalida  <- "T05" 
 
 kexperimento  <- NA
 kscript         <- "S1430_T05"
