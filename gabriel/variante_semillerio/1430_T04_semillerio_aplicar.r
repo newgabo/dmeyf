@@ -3,27 +3,55 @@ rm( list=ls() )  #remove all objects
 gc()             #garbage collection
 
 require("data.table")
-require("lightgbm")
+require("rlist")
+require("yaml")
+
 require("primes")
+
+require("lightgbm")
 
 
 setwd("~/buckets/b1/")
 
 karch_dataset  <- "./datasets/semillerio_dataset_lag1.csv.gz"
-ksalida  <- "T02" 
+ksalida  <- "T03" 
+
+kexperimento  <- NA
+kscript         <- "S1430_T04"
+
 
 kcantidad_semillas  <- 200
 
 #ATENCION
 #aqui deben ir los mejores valores que salieron de la optimizacion bayesiana
 x  <- list()
-x$gleaf_size   <-  61.28281775
-x$gnum_leaves  <-  0.269854826
-x$learning_rate <-  0.021390731
-x$feature_fraction <-  0.601540262
-x$num_iterations  <- 1006
+x$gleaf_size   <-  67.83860746
+x$gnum_leaves  <-  0.758904577
+x$learning_rate <-  0.031940903
+x$feature_fraction <-  0.955250037
+x$max_bin  <-  31
+x$num_iterations  <-   485
 
+meses_total <- c(201909, 201808, 202001, 201803, 201807, 201902, 201911, 201806, 201804, 202010, 202011, 202101)
+meses_training <- c(201909, 201808, 202001, 201803, 201807, 201902, 201911, 201806, 201804, 202010, 202011)
 
+#------------------------------------------------------------------------------
+#Funcion que lleva el registro de los experimentos
+
+get_experimento  <- function()
+{
+  if( !file.exists( "./maestro.yaml" ) )  cat( file="./maestro.yaml", "experimento: 1000" )
+
+  exp  <- read_yaml( "./maestro.yaml" )
+  experimento_actual  <- exp$experimento
+
+  exp$experimento  <- as.integer(exp$experimento + 1)
+  Sys.chmod( "./maestro.yaml", mode = "0644", use_umask = TRUE)
+  write_yaml( exp, "./maestro.yaml" )
+  Sys.chmod( "./maestro.yaml", mode = "0444", use_umask = TRUE) #dejo el archivo readonly
+
+  return( experimento_actual )
+}
 #------------------------------------------------------------------------------
 
 particionar  <- function( data,  division, agrupa="",  campo="fold", start=1, seed=NA )
@@ -40,6 +68,17 @@ particionar  <- function( data,  division, agrupa="",  campo="fold", start=1, se
 
 setwd("~/buckets/b1/")
 
+if( is.na(kexperimento ) )   kexperimento <- get_experimento()  #creo el experimento
+
+#en estos archivos quedan los resultados
+dir.create( paste0( "./work/E",  kexperimento, "/" ) )     #creo carpeta del experimento dentro de work
+dir.create( paste0( "./kaggle/E",  kexperimento, "/" ) )   #creo carpeta del experimento dentro de kaggle
+dir.create( paste0( "./kaggle/E",  kexperimento, "/meseta/" ) )   #creo carpeta del experimento dentro de kaggle
+
+kkaggle       <- paste0("./kaggle/E",kexperimento, "/E",  kexperimento, "_", kscript, "_" )
+kkagglemeseta <- paste0("./kaggle/E",kexperimento, "/meseta/E",  kexperimento, "_", kscript, "_" )
+
+
 set.seed( 102191 )   #dejo fija esta semilla
 
 #me genero un vector de semilla buscando numeros primos al azar
@@ -49,7 +88,8 @@ ksemillas  <- sample(primos)[ 1:kcantidad_semillas ]   #me quedo con CANTIDAD_SE
 #cargo el dataset donde voy a entrenar
 dataset  <- fread(karch_dataset)
 
-dataset  <- dataset[ foto_mes >= 202001 ]
+#dataset  <- dataset[ foto_mes >= 202001 ]
+dataset <- dataset[foto_mes %in% meses_total]
 gc()
 
 
@@ -60,7 +100,8 @@ dataset[ , clase01 := ifelse( clase_ternaria=="CONTINUA", 0L, 1L) ]
 
 
 dataset[  , generacion := 0L ]
-dataset[  foto_mes>=202001 & foto_mes<=202011, generacion := 1L ]
+#dataset[  foto_mes>=202001 & foto_mes<=202011, generacion := 1L ]
+dataset[  foto_mes %in% meses_training, generacion := 1L ]
 
 
 #los campos que se van a utilizar
@@ -91,7 +132,7 @@ param_buenos  <- list( objective= "binary",
                        verbosity= -100,
                        seed= 484201,
                        max_depth=  -1,
-                       max_bin= 31,
+                       max_bin= x$max_bin,
                        min_gain_to_split= 0.0,
                        lambda_l1= 0.0,
                        lambda_l2= 0.0, 
@@ -152,7 +193,7 @@ for( semilla in  ksemillas)
       
       #genero el archivo para Kaggle
       fwrite( entrega[ , c("numero_de_cliente","Predicted"), with=FALSE], 
-              file=  paste0( "./kaggle/" , ksalida, "_", isemilla,"_",corte, ".csv" ),  
+              file=  paste0(  kkagglemeseta, isemilla, "_",corte, ".csv" ),  
               sep= "," )
     }
   }
