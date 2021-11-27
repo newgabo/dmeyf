@@ -54,7 +54,7 @@ setwd( directory.root )
 
 kexperimento  <- NA #NA si se corre la primera vez, un valor concreto si es para continuar procesando
 
-kscript       <- "1420_T06_lgbm"
+kscript       <- "1420_T07_lgbm"
 
 karchivo_dataset   <-  "./datasets/semillerio_dataset_lag1.csv.gz"
 
