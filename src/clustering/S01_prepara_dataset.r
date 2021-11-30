@@ -14,7 +14,7 @@ gc()
 
 #achico el dataset
 dataset[  ,  azar := runif( nrow(dataset) ) ]
-dataset  <-  dataset[  clase_ternaria =="BAJA+1"  & foto_mes>=202001  & foto_mes<=202011, ]
+dataset  <-  dataset[  (clase_ternaria =="BAJA+1" | clase_ternaria =="BAJA+2")  & foto_mes>=202001  & foto_mes<=202011, ]
 gc()
 
 
